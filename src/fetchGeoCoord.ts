@@ -6,27 +6,16 @@ export interface GeoCoord {
 }
 
 export function fetchGeoCoord(query: string): Promise<GeoCoord> {
-  const baseUrl = "https://220.maxkuechen.com/geoCoord/search";
-  const apiUrl = `${baseUrl}?q=${encodeURIComponent(query)}`;
+  const searchURL = new URL("https://geocode.maps.co/search");
+  searchURL.searchParams.append("q", query);
 
-  return fetch(apiUrl)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Failed to fetch geo-coordinate. Status: ${response.status}`);
+  return fetch(searchURL.toString())
+    .then(response => response.json())
+    .then(json => {
+      if (Array.isArray(json) && json.length > 0) {
+        return Promise.resolve({ lat: Number.parseFloat(json[0].lat), lon: Number.parseFloat(json[0].lon) });
+      } else {
+        return Promise.reject(new Error("No results found for query."));
       }
-      return response.json();
-    })
-    .then(data => {
-      if (data.length === 0) {
-        throw new Error("No results found for query.");
-      }
-      const firstResult = data[0];
-      const lon = Number.parseFloat(firstResult.lon);
-      const lat = Number.parseFloat(firstResult.lat);
-
-      if (isNaN(lon) || isNaN(lat)) {
-        throw new Error("Invalid geo-coordinate format in the response.");
-      }
-      return { lon, lat };
     });
 }
