@@ -27,3 +27,4 @@ export function fetchCurrentTemperature(coords: GeoCoord): Promise<TemperatureRe
         return Promise.reject(new Error("No results found for query"));
       }
     });
+  }
