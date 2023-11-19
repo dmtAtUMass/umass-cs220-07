@@ -6,8 +6,8 @@ export interface GeoCoord {
 }
 
 export function fetchGeoCoord(query: string): Promise<GeoCoord> {
-  const searchURL = new URL("https://geocode.maps.co/search");
-  searchURL.searchParams.append("q", query);
+  const searchURL = new URL("https://220.maxkuechen.com/geoCoord/search");
+  searchURL.searchParams.set("q", query);
 
   return fetch(searchURL.toString())
     .then(response => response.json())
