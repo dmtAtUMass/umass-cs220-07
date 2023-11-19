@@ -15,10 +15,7 @@ export function fetchCurrentTemperature(coords: GeoCoord): Promise<TemperatureRe
 
   return fetch(searchURL.toString())
     .then(response => {
-      if (!response.ok) {
-        return Promise.reject(new Error(`HTTP error! Status: ${response.status}`));
-      }
-      return response.json();
+      return response.ok? response.json() : Promise.reject(new Error(`HTTP error! Status: ${response.status}`));
     })
     .then(json => {
       if (json.hourly !== undefined && json.hourly.time !== undefined && json.hourly.temperature_2m !== undefined) {

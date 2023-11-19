@@ -1,4 +1,7 @@
 import fetch from "../include/fetch.js";
+import {
+  makeSearchURL,
+} from "./utility.js";
 
 export interface GeoCoord {
   lat: number;
@@ -6,10 +9,8 @@ export interface GeoCoord {
 }
 
 export function fetchGeoCoord(query: string): Promise<GeoCoord> {
-  const searchURL = new URL("https://geocode.maps.co/search");
-  searchURL.searchParams.append("q", query);
-
-  return fetch(searchURL.toString())
+  const searchURL = makeSearchURL("https://geocode.maps.co/search", query)
+  return fetch(searchURL)
     .then(response => response.json())
     .then(json => {
       if (Array.isArray(json) && json.length > 0) {
