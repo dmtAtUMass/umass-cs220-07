@@ -13,26 +13,39 @@ export function fetchUniversityWeather(
   universityQuery: string,
   transformName?: (s: string) => string
 ): Promise<AverageTemperatureResults> {
-  // TODO
-  return fetchUniversities(universityQuery).then(universities => transformName ? universities.map(transformName) : universities)
-    .then(universities => Promise.all(universities.map(university => fetchGeoCoord(university))))
-    .then(coords => Promise.all(coords.map(coord => fetchCurrentTemperature(coord))))
-    .then(temperatures => {
-      const results: AverageTemperatureResults = { totalAverage: 0 };
-      temperatures.forEach(temperature => {
-        const average = temperature.temperature_2m.reduce((a, b) => a + b, 0) / temperature.temperature_2m.length;
-        results[temperature.time[0]] = average;
-        results.totalAverage += average;
+  return fetchUniversities(universityQuery)
+    .then((universities) => {
+      if (universities.length === 0) {
+        throw new Error("No results found for query.");
+      }
+      
+      const fetchPromises = universities.map((university) => {
+        const transformedName = transformName ? transformName(university) : university;
+        return fetchGeoCoord(transformedName)
+          .then((geoCoord) => fetchCurrentTemperature(geoCoord))
+          .then((temperature) => ({ name: university, temperature }));
       });
-      results.totalAverage /= temperatures.length;
-      return results;
+      
+      return Promise.all(fetchPromises)
+        .then((results) => {
+          const averageTemperatures: AverageTemperatureResults = { totalAverage: 0 };
+          let totalTemperature = 0;
+          results.forEach((result) => {
+            const localAvg = result.temperature.temperature_2m.reduce((a, b) => a + b) / result.temperature.temperature_2m.length;
+            averageTemperatures[result.name] = localAvg;
+            totalTemperature += localAvg;
+          });
+          averageTemperatures.totalAverage = totalTemperature / results.length;
+          
+          return averageTemperatures;
+        });
     });
 }
 
 export function fetchUMassWeather(): Promise<AverageTemperatureResults> {
-  return fetchUniversityWeather("University of Massachusetts at Amherst");
+  return fetchUniversityWeather("University of Massachusetts", (s) => s.replace("at", ""))
 }
 
 export function fetchUCalWeather(): Promise<AverageTemperatureResults> {
-  return fetchUniversityWeather("University of California at Berkeley");
+  return fetchUniversityWeather("University of California", (s) => s.replace("at", ""))
 }
