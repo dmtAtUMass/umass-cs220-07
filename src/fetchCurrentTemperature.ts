@@ -1,27 +1,23 @@
 import { GeoCoord } from "./fetchGeoCoord.js";
 import fetch from "../include/fetch.js";
+import { makeSearchURL } from "./utility.js";
 
 interface TemperatureReading {
   time: string[];
   temperature_2m: number[];
 }
-
 export function fetchCurrentTemperature(coords: GeoCoord): Promise<TemperatureReading> {
-  const searchURL = new URL("https://api.open-meteo.com/v1/forecast");
-  searchURL.searchParams.set("latitude", coords.lat.toString());
-  searchURL.searchParams.set("longitude", coords.lon.toString());
-  searchURL.searchParams.set("hourly", "temperature_2m");
-  searchURL.searchParams.set("temperature_unit", "fahrenheit");
-
-  return fetch(searchURL.toString())
+  const queries = [["latitude", coords.lat.toString()], ["longitude", coords.lon.toString()], ["hourly", "temperature_2m"], ["temperature_unit", "fahrenheit"]];
+  const searchURL = makeSearchURL("https://220.maxkuechen.com/currentTemperature/forecast", queries);
+  return fetch(searchURL)
     .then(response => {
-      return response.ok? response.json() : Promise.reject(new Error(`HTTP error! Status: ${response.status}`));
+      return response.ok ? response.json() : Promise.reject(new Error(`HTTP error! Status: ${response.status}`));
     })
-    .then(json => {
-      if (json.hourly !== undefined && json.hourly.time !== undefined && json.hourly.temperature_2m !== undefined) {
-        return Promise.resolve({ time: json.hourly.time, temperature_2m: json.hourly.temperature_2m });
-      } else {
-        return Promise.reject(new Error("No results found for query"));
-      }
+    .then((json : {hourly : TemperatureReading}) => {
+      // if (json.hourly) { // I think we don't need the check here because if the geolocation does not exist the error is caught in the step above
+      return Promise.resolve({ time: json.hourly.time, temperature_2m: json.hourly.temperature_2m });
+      // } else {
+      //   return Promise.reject(new Error("No results found for query"));
+      // }
     });
-  }
+}
